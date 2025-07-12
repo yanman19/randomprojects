@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Die With Zero - YANUS Style v8</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.11.0/math.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap');
+        
+        :root {
+            --bg-color: #121212;
+            --paper-bg: #1E1E1E;
+            --card-bg: #252525;
+            --text-color: #E0E0E0;
+            --primary-color: #4CAF50;
+            --secondary-color: #2196F3;
+            --accent-color: #FF9800;
+            --danger-color: #F44336;
+            --border-color: #424242;
+            --input-bg: #333333;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .container-wide {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .header h1 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            margin: 5px 0;
+        }
+
+        .tip {
+            color: var(--accent-color);
+            font-size: 14px;
+            font-style: italic;
+            margin-top: 10px;
+        }
+
+        .input-section {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .input-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            flex: 1 1 200px;
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        .input-field, select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background-color: var(--input-bg);
+            color: #FFFFFF;
+            transition: border-color 0.3s;
+        }
+
+        .input-field:focus, select:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.3s;
+            margin: 5px;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #45a049;
+        }
+
+        .btn-accent {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .btn-accent:hover {
+            background-color: #F57C00;
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #1E88E5;
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+            font-size: 12px;
+            padding: 5px 10px;
+        }
+
+        .btn-danger:hover {
+            background-color: #E53935;
+        }
+
+        .life-purchases {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border-left: 4px solid var(--secondary-color);
+        }
+
+        .purchase-item {
+            display: flex;
+            background-color: var(--input-bg);
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .purchase-name {
+            flex: 2;
+            font-weight: 500;
+        }
+
+        .purchase-cost, .purchase-age {
+            flex: 1;
+            text-align: center;
+        }
+
+        .purchase-actions {
+            flex: 0 0 40px;
+            text-align: right;
+        }
+
+        .optimization-result {
+            background-color: #2D3748;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid var(--accent-color);
+            display: none;
+        }
+
+        .optimization-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--accent-color);
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .summary-cards {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .summary-card {
+            flex: 1 1 calc(20% - 20px);
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            min-width: 150px;
+            border: 1px solid var(--border-color);
+        }
+
+        .card-value {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: var(--primary-color);
+        }
+
+        .card-label {
+            color: var(--text-color);
+            font-size: 14px;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-container {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            height: 400px;
+        }
+
+        .chart-full-width {
+            grid-column: 1 / -1;
+        }
+
+        .table-container {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 30px;
+            overflow-x: visible;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        th, td {
+            padding: 8px 12px;
+            text-align: right;
+            border: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        th {
+            background-color: var(--paper-bg);
+            color: var(--primary-color);
+            font-weight: bold;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        tr:nth-child(even) {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        /* Specific column widths for better fit */
+        th:nth-child(1), td:nth-child(1) { width: 5%; } /* Age */
+        th:nth-child(2), td:nth-child(2) { width: 10%; } /* BOY Net Worth */
+        th:nth-child(3), td:nth-child(3) { width: 10%; } /* Pre-Tax Income */
+        th:nth-child(4), td:nth-child(4) { width: 10%; } /* Post-Tax Income */
+        th:nth-child(5), td:nth-child(5) { width: 8%; } /* Tax Rate */
+        th:nth-child(6), td:nth-child(6) { width: 10%; } /* Regular Spending */
+        th:nth-child(7), td:nth-child(7) { width: 10%; } /* Life Purchases */
+        th:nth-child(8), td:nth-child(8) { width: 10%; } /* Annual Savings */
+        th:nth-child(9), td:nth-child(9) { width: 9%; } /* Investment Growth */
+        th:nth-child(10), td:nth-child(10) { width: 10%; } /* Retirement Balance */
+        th:nth-child(11), td:nth-child(11) { width: 10%; } /* EOY Net Worth */
+        th:nth-child(12), td:nth-child(12) { width: 8%; } /* Life Energy */
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .summary-cards {
+                flex-direction: column;
+            }
+            
+            .summary-card {
+                flex: 1 1 100%;
+            }
+            
+            .container-wide {
+                padding: 10px;
+            }
+            
+            .table-container {
+                padding: 15px;
+                overflow-x: auto;
+            }
+            
+            table {
+                font-size: 12px;
+            }
+            
+            th, td {
+                padding: 6px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Die With Zero | YANUS-Style v8</h1>
+            <p>New: Health-Based Spending Model & Realistic Life Energy Curve</p>
+            <p class="tip">💡 Your spending now adjusts based on your health and energy levels - spend more when young and energetic!</p>
+        </div>
+
+        <!-- Input Form -->
+        <div class="input-section">
+            <h3 style="color: var(--primary-color); margin-bottom: 20px;">Financial Parameters</h3>
+            
+            <div class="input-row">
+                <div class="input-group">
+                    <label>Current Age</label>
+                    <input type="number" id="currentAge" class="input-field" value="26" min="18" max="120">
+                </div>
+                <div class="input-group">
+                    <label>Death Age</label>
+                    <input type="number" id="deathAge" class="input-field" value="90" min="18" max="120">
+                </div>
+                <div class="input-group">
+                    <label>Retirement Age</label>
+                    <input type="number" id="retirementAge" class="input-field" value="50" min="18" max="120">
+                </div>
+            </div>
+
+            <div class="input-row">
+                <div class="input-group">
+                    <label>Net Worth ($)</label>
+                    <input type="number" id="netWorth" class="input-field" value="35000" min="0">
+                </div>
+                <div class="input-group">
+                    <label>Tax Rate (%)</label>
+                    <input type="number" id="taxRate" class="input-field" value="50" min="0" max="100">
+                </div>
+                <div class="input-group">
+                    <label>Investment Growth (%)</label>
+                    <input type="number" id="investmentGrowth" class="input-field" value="3" min="0" max="100">
+                </div>
+            </div>
+
+            <div class="input-row">
+                <div class="input-group">
+                    <label>Pre-Tax Income ($)</label>
+                    <input type="number" id="preTaxIncome" class="input-field" value="300000" min="0">
+                </div>
+                <div class="input-group">
+                    <label>Income Growth (%)</label>
+                    <input type="number" id="incomeGrowth" class="input-field" value="10" min="0" max="100">
+                </div>
+                <div class="input-group">
+                    <label>Health Aging Speed</label>
+                    <select id="healthSpeed" class="input-field">
+                        <option value="slow">🐌 Slow (Aging Gracefully)</option>
+                        <option value="standard" selected>⚡ Standard (Typical)</option>
+                        <option value="fast">🔥 Fast (Accelerated Aging)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="input-row">
+                <div class="input-group">
+                    <label>Retirement Balance ($)</label>
+                    <input type="number" id="retirementBalance" class="input-field" value="45000" min="0">
+                </div>
+                <div class="input-group">
+                    <label>Retirement Growth (%)</label>
+                    <input type="number" id="retirementGrowth" class="input-field" value="3" min="0" max="100">
+                </div>
+                <div class="input-group">
+                    <label>Annual Contribution ($)</label>
+                    <input type="number" id="annualContribution" class="input-field" value="24000" min="0">
+                </div>
+            </div>
+
+            <div class="input-row">
+                <div class="input-group">
+                    <label>Base Spending % (Health Adjusted)</label>
+                    <input type="number" id="spendingPercentage" class="input-field" value="0.75" min="0" max="1" step="0.01">
+                </div>
+            </div>
+        </div>
+
+        <!-- Life Purchases -->
+        <div class="life-purchases">
+            <h3 style="color: var(--secondary-color); margin-bottom: 10px;">Life Purchases</h3>
+            <p style="margin-bottom: 20px; font-size: 14px;">Add significant purchases to see how they impact your financial trajectory</p>
+            
+            <div id="purchasesList"></div>
+            
+            <div class="input-row" style="margin-top: 20px;">
+                <div class="input-group" style="flex: 2;">
+                    <label>Purchase Name</label>
+                    <input type="text" id="purchaseName" class="input-field" placeholder="e.g. Dream Vacation">
+                </div>
+                <div class="input-group">
+                    <label>Cost ($)</label>
+                    <input type="number" id="purchaseCost" class="input-field" placeholder="10000" min="0">
+                </div>
+                <div class="input-group">
+                    <label>Age</label>
+                    <input type="number" id="purchaseAge" class="input-field" placeholder="35" min="18" max="120">
+                </div>
+                <div class="input-group" style="display: flex; align-items: flex-end;">
+                    <button id="addPurchaseBtn" class="btn btn-secondary">Add Purchase</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="input-section" style="text-align: center;">
+            <h3 style="color: var(--accent-color); margin-bottom: 20px;">Calculate Your Financial Future</h3>
+            <p style="margin-bottom: 25px; color: var(--text-color);">First optimize your spending for the 'Die With Zero' strategy, then calculate your complete financial projection.</p>
+            
+            <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+                <button id="optimizeBtn" class="btn btn-accent" style="font-size: 16px; padding: 15px 30px;">
+                    🎯 Optimize Spending
+                </button>
+                <button id="calculateBtn" class="btn btn-primary" style="font-size: 16px; padding: 15px 30px;">
+                    📊 Calculate Results
+                </button>
+            </div>
+            
+            <p style="margin-top: 15px; font-size: 13px; color: var(--text-color); opacity: 0.8;">
+                💡 Tip: Use "Optimize Spending" to find the perfect percentage that gets you closest to zero at death
+            </p>
+        </div>
+
+        <!-- Optimization Result -->
+        <div id="optimizationResult" class="optimization-result">
+            <h3 style="color: var(--accent-color); margin-bottom: 10px;">Optimization Results</h3>
+            <div id="optimizationValue" class="optimization-value"></div>
+            <div id="optimizationExplanation">
+                <p>With this spending percentage, you'll gradually adjust your spending over your lifetime to perfectly exhaust your wealth by the end of your life projection. This optimizes the 'Die With Zero' principle, allowing you to enjoy your money during your lifetime without leaving excess wealth unspent.</p>
+                <p>This calculation includes your life purchases and uses the realistic life energy model with health-based spending. Your actual spending will vary based on your health: higher spending when you're young and energetic, lower spending as you age.</p>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div id="summaryCards" class="summary-cards"></div>
+
+        <!-- Charts -->
+        <div class="charts-grid">
+            <div class="chart-container">
+                <canvas id="wealthChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="incomeChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="spendingChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="healthChart"></canvas>
+            </div>
+            <div class="chart-container chart-full-width">
+                <canvas id="percentSpentChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        </div>
+    </div>
+    
+    <div class="container-wide">
+        <div class="table-container">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3>Detailed Projections</h3>
+                <button id="exportBtn" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">Export to CSV</button>
+            </div>
+            <div id="dataTable"></div>
+        </div>
+    </div>
+
+    <script>
+        // Life Energy Base Data
+        const lifeEnergyBaseData = {
+            0: 85, 5: 95, 10: 98, 15: 100, 20: 100, 25: 98, 30: 95, 35: 92,
+            40: 88, 45: 84, 50: 78, 55: 72, 60: 65, 65: 58, 70: 50, 75: 42,
+            80: 35, 85: 28, 90: 22, 95: 15, 100: 10
+        };
+
+        // Life Purchases Storage
+        let lifePurchases = [
+            {name: "Dream Vacation", cost: 10000, age: 35},
+            {name: "Home Renovation", cost: 50000, age: 45}
+        ];
+
+        // Chart instances
+        let charts = {};
+
+        // Linear interpolation function
+        function interpolate(x, x1, y1, x2, y2) {
+            return y1 + (y2 - y1) * (x - x1) / (x2 - x1);
+        }
+
+        // Calculate life energy for a given age
+        function calculateLifeEnergy(age, speed = 'standard', deathAge = 90) {
+            const ages = Object.keys(lifeEnergyBaseData).map(Number).sort((a, b) => a - b);
+            const energies = ages.map(age => lifeEnergyBaseData[age]);
+
+            // Extend data to death age
+            if (deathAge > ages[ages.length - 1]) {
+                ages.push(deathAge);
+                energies.push(2); // Very low energy at death
+            }
+
+            // Find interpolation points
+            let baseEnergy;
+            if (age <= ages[0]) {
+                baseEnergy = energies[0];
+            } else if (age >= ages[ages.length - 1]) {
+                baseEnergy = energies[energies.length - 1];
+            } else {
+                // Find surrounding points
+                for (let i = 0; i < ages.length - 1; i++) {
+                    if (age >= ages[i] && age <= ages[i + 1]) {
+                        baseEnergy = interpolate(age, ages[i], energies[i], ages[i + 1], energies[i + 1]);
+                        break;
+                    }
+                }
+            }
+
+            // Apply speed adjustments
+            let adjustedEnergy;
+            if (speed === 'fast') {
+                if (age <= 20) {
+                    adjustedEnergy = baseEnergy * 0.98;
+                } else {
+                    const declineFactor = 1.4;
+                    const peakEnergy = 100;
+                    const ageDecline = peakEnergy - baseEnergy;
+                    const adjustedDecline = ageDecline * declineFactor;
+                    adjustedEnergy = peakEnergy - adjustedDecline;
+                }
+            } else if (speed === 'slow') {
+                if (age <= 20) {
+                    adjustedEnergy = baseEnergy * 1.02;
+                } else {
+                    const declineFactor = 0.6;
+                    const peakEnergy = 100;
+                    const ageDecline = peakEnergy - baseEnergy;
+                    const adjustedDecline = ageDecline * declineFactor;
+                    adjustedEnergy = peakEnergy - adjustedDecline;
+                }
+            } else {
+                adjustedEnergy = baseEnergy;
+            }
+
+            return Math.max(1, Math.min(100, adjustedEnergy));
+        }
+
+        // Main calculation function
+        function calculateProjection() {
+            const currentAge = parseInt(document.getElementById('currentAge').value);
+            const deathAge = parseInt(document.getElementById('deathAge').value);
+            const retirementAge = parseInt(document.getElementById('retirementAge').value);
+            const netWorth = parseFloat(document.getElementById('netWorth').value);
+            const taxRate = parseFloat(document.getElementById('taxRate').value);
+            const investmentGrowth = parseFloat(document.getElementById('investmentGrowth').value);
+            const preTaxIncome = parseFloat(document.getElementById('preTaxIncome').value);
+            const incomeGrowth = parseFloat(document.getElementById('incomeGrowth').value);
+            const healthSpeed = document.getElementById('healthSpeed').value;
+            const retirementBalance = parseFloat(document.getElementById('retirementBalance').value);
+            const retirementGrowthRate = parseFloat(document.getElementById('retirementGrowth').value);
+            const annualContribution = parseFloat(document.getElementById('annualContribution').value);
+            const spendingPercentage = parseFloat(document.getElementById('spendingPercentage').value);
+
+            const totalYears = deathAge - currentAge + 1;
+            const ages = Array.from({length: totalYears}, (_, i) => currentAge + i);
+
+            // Income calculations
+            const preTaxIncomeValues = ages.map((age, i) => 
+                age < retirementAge ? preTaxIncome * Math.pow(1 + incomeGrowth / 100, i) : 0
+            );
+            const postTaxIncome = preTaxIncomeValues.map(income => Math.round(income * (1 - taxRate / 100)));
+
+            // Health calculations
+            const healthValues = ages.map(age => calculateLifeEnergy(age, healthSpeed, deathAge));
+
+            // Retirement account calculations
+            const retirementBalances = [retirementBalance];
+            for (let i = 1; i < totalYears; i++) {
+                if (ages[i] <= 65) {
+                    if (ages[i] < retirementAge) {
+                        retirementBalances.push(Math.round(retirementBalances[i - 1] * (1 + retirementGrowthRate / 100) + annualContribution));
+                    } else {
+                        retirementBalances.push(Math.round(retirementBalances[i - 1] * (1 + retirementGrowthRate / 100)));
+                    }
+                } else {
+                    retirementBalances.push(0);
+                }
+            }
+
+            // Health-based spending calculations
+            const spending = [];
+            let baseRetirementSpending = 0;
+
+            for (let i = 0; i < totalYears; i++) {
+                if (ages[i] < retirementAge) {
+                    // Pre-retirement: health-based spending
+                    const healthFactor = healthValues[i] / 100.0;
+                    const maxSpendingMultiplier = 1.3;
+                    const minSpendingMultiplier = 0.4;
+                    const spendingMultiplier = minSpendingMultiplier + (maxSpendingMultiplier - minSpendingMultiplier) * healthFactor;
+                    const adjustedSpendingPercentage = Math.min(spendingPercentage * spendingMultiplier, 0.95);
+                    const spend = Math.round(postTaxIncome[i] * adjustedSpendingPercentage);
+                    spending.push(-spend);
+                    baseRetirementSpending = spend;
+                } else {
+                    // Post-retirement: health-adjusted retirement spending
+                    const healthFactor = healthValues[i] / 100.0;
+                    const retirementHealthMultiplier = 0.6 + (0.6 * healthFactor);
+                    const spend = Math.max(Math.round(baseRetirementSpending * retirementHealthMultiplier), 30000);
+                    spending.push(-spend);
+                }
+            }
+
+            // Life purchases
+            const lifePurchaseCosts = new Array(totalYears).fill(0);
+            const lifePurchaseMarkers = [];
+
+            for (const purchase of lifePurchases) {
+                if (purchase.age >= currentAge && purchase.age <= deathAge) {
+                    const idx = purchase.age - currentAge;
+                    lifePurchaseCosts[idx] += -purchase.cost;
+                    lifePurchaseMarkers.push({
+                        age: purchase.age,
+                        name: purchase.name,
+                        cost: purchase.cost
+                    });
+                }
+            }
+
+            // Annual savings
+            const annualSavings = postTaxIncome.map((income, i) => 
+                income + spending[i] + lifePurchaseCosts[i]
+            );
+
+            // Wealth calculations
+            const boyNetWorth = [netWorth];
+            const investmentGrowthValues = [];
+            const eoyNetWorth = [];
+            let currentNetWorth = netWorth;
+
+            for (let i = 0; i < totalYears; i++) {
+                const growth = Math.round(currentNetWorth * investmentGrowth / 100);
+                investmentGrowthValues.push(growth);
+
+                let newWealth = currentNetWorth + annualSavings[i] + growth;
+
+                if (ages[i] === 65) {
+                    newWealth += retirementBalances[i];
+                }
+
+                eoyNetWorth.push(Math.round(newWealth));
+
+                if (i < totalYears - 1) {
+                    currentNetWorth = newWealth;
+                    boyNetWorth.push(Math.round(currentNetWorth));
+                }
+            }
+
+            // Percentage of income spent
+            const percentIncomeSpent = postTaxIncome.map((income, i) => 
+                income > 0 ? Math.round((Math.abs(spending[i]) / income) * 100 * 100) / 100 : 0
+            );
+
+            return {
+                ages,
+                boyNetWorth,
+                preTaxIncomeValues,
+                postTaxIncome,
+                spending,
+                lifePurchaseCosts,
+                lifePurchaseMarkers,
+                annualSavings,
+                investmentGrowthValues,
+                retirementBalances,
+                eoyNetWorth,
+                healthValues,
+                percentIncomeSpent,
+                finalNetWorth: eoyNetWorth[eoyNetWorth.length - 1]
+            };
+        }
+
+        // Format number for display
+        function formatNumber(value) {
+            return value < 0 ? `(${Math.abs(value).toLocaleString()})` : value.toLocaleString();
+        }
+
+        // Update summary cards
+        function updateSummaryCards() {
+            const currentAge = parseInt(document.getElementById('currentAge').value);
+            const deathAge = parseInt(document.getElementById('deathAge').value);
+            const retirementAge = parseInt(document.getElementById('retirementAge').value);
+            const netWorth = parseFloat(document.getElementById('netWorth').value);
+
+            const workYears = retirementAge - currentAge;
+            const retirementYears = deathAge - retirementAge;
+            const totalLifePurchases = lifePurchases.reduce((sum, p) => sum + p.cost, 0);
+
+            const cardsHtml = `
+                <div class="summary-card">
+                    <div class="card-value">${currentAge}</div>
+                    <div class="card-label">Current Age</div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-value">${workYears}</div>
+                    <div class="card-label">Working Years</div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-value">${retirementYears}</div>
+                    <div class="card-label">Retirement Years</div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-value">$${netWorth.toLocaleString()}</div>
+                    <div class="card-label">Current Net Worth</div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-value" style="color: var(--secondary-color);">$${totalLifePurchases.toLocaleString()}</div>
+                    <div class="card-label">Life Purchases</div>
+                </div>
+            `;
+
+            document.getElementById('summaryCards').innerHTML = cardsHtml;
+        }
+
+        // Create charts
+        function createCharts(projection) {
+            const darkTheme = {
+                color: '#E0E0E0',
+                backgroundColor: '#252525',
+                gridColor: '#333333'
+            };
+
+            // Destroy existing charts
+            Object.values(charts).forEach(chart => chart?.destroy());
+            charts = {};
+
+            // Wealth Chart
+            const wealthCtx = document.getElementById('wealthChart').getContext('2d');
+            charts.wealth = new Chart(wealthCtx, {
+                type: 'line',
+                data: {
+                    labels: projection.ages,
+                    datasets: [
+                        {
+                            label: 'Net Worth',
+                            data: projection.boyNetWorth,
+                            borderColor: '#4CAF50',
+                            backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Retirement',
+                            data: projection.retirementBalances,
+                            borderColor: '#2196F3',
+                            borderDash: [5, 5],
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Wealth Trajectory',
+                            color: darkTheme.color
+                        },
+                        legend: {
+                            labels: {
+                                color: darkTheme.color
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Age',
+                                color: darkTheme.color
+                            },
+                            ticks: {
+                                color: darkTheme.color
+                            },
+                            grid: {
+                                color: darkTheme.gridColor
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Amount ($)',
+                                color: darkTheme.color
+                            },
+                            ticks: {
+                                color: darkTheme.color,
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            },
+                            grid: {
+                                color: darkTheme.gridColor
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Income Chart
+            const incomeCtx = document.getElementById('incomeChart').getContext('2d');
+            charts.income = new Chart(incomeCtx, {
+                type: 'line',
+                data: {
+                    labels: projection.ages,
+                    datasets: [{
+                        label: 'Post-Tax Income',
+                        data: projection.postTaxIncome,
+                        borderColor: '#2196F3',
+                        backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Post-Tax Income',
+                            color: darkTheme.color
+                        },
+                        legend: {
+                            labels: {
+                                color: darkTheme.color
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Age',
+                                color: darkTheme.color
+                            },
+                            ticks: {
+                                color: darkTheme.color
+                            },
+                            grid: {
+                                color: darkTheme.gridColor
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Income ($)',
+                                color: darkTheme.color
+                            },
+                            ticks: {
+                                color: darkTheme.color,
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            },
+                            grid: {
+                                color: darkTheme.gridColor
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Spending Chart
+            const spendingCtx = document.getElementById('spendingChart').getContext('2d');
+            charts.spending = new Chart(spendingCtx, {
+                type: 'line',
+                data: {
+                    labels: projection.ages,
+                    datasets: [
+                        {
+                            label: 'Regular Spending',
+                            data: projection.spending.map(s => Math.abs(s)),
+                            borderColor: '#F44336',
+                            backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Life Purchases',
+                            data: projection.lifePurchaseCosts.map(c => c !== 0 ? Math.abs(c) : null),
+                            type: 'bar',
+                            backgroundColor: 'rgba(33, 150, 243, 0.7)',
+                            borderColor: '#2196F3'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Spending Over Time',
+                            color: darkTheme.color
+                        },
+                        legend: {
+                            labels: {
+                                color: darkTheme.color
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Age',
+                                color: darkTheme.color
+                            },
+                            ticks: {
+                                color: darkTheme.color
+                            },
+                            grid: {
+                                color: darkTheme.gridColor
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Spending ($)',
+                                color: darkTheme.color
+                            },
+                            ticks: {
+                                color: darkTheme.color,
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            },
+                            grid: {
+                                color: darkTheme.gridColor
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Health Chart
+            const healthCtx = document.getElementById('healthChart').getContext('2d');
+            const healthSpeed = document.getElementById('healthSpeed').value;
+            charts.health = new Chart(healthCtx, {
+                type: 'line',
+                data: {
+                    labels: projection.ages,
+                    datasets: [{
+                        label: `Life Energy (${healthSpeed.charAt(0).toUpperCase() + healthSpeed.slice(1)})`,
+                        data: projection.healthValues,
+                        borderColor: '#9C27B0',
+                        backgroundColor: 'rgba(156, 39, 176, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `Life Energy Trajectory (${healthSpeed.charAt(0).toUpperCase() + healthSpeed.slice(1)} Speed)`,
+                            color: darkTheme.color
+                        },
+                        legend: {
+                            labels: {
+                                color: darkTheme.color
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Age',
+                                color: darkTheme.color
+                            },
+                            ticks: {
+                                color: darkTheme.color
+                            },
+                            grid: {
+                                color: darkTheme.gridColor
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Life Energy (%)',
+                                color: darkTheme.color
+                            },
+                            ticks: {
+                                color: darkTheme.color,
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            },
+                            grid: {
+                                color: darkTheme.gridColor
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Percent Income Spent Chart
+            const percentCtx = document.getElementById('percentSpentChart').getContext('2d');
+            charts.percent = new Chart(percentCtx, {
+                type: 'line',
+                data: {
+                    labels: projection.ages,
+                    datasets: [{
+                        label: '% Income Spent',
+                        data: projection.percentIncomeSpent,
+                        borderColor: '#FF9800',
+                        backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Percentage of Income Spent',
+                            color: darkTheme.color
+                        },
+                        legend: {
+                            labels: {
+                                color: darkTheme.color
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Age',
+                                color: darkTheme.color
+                            },
+                            ticks: {
+                                color: darkTheme.color
+                            },
+                            grid: {
+                                color: darkTheme.gridColor
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: '% of Income',
+                                color: darkTheme.color
+                            },
+                            ticks: {
+                                color: darkTheme.color,
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            },
+                            grid: {
+                                color: darkTheme.gridColor
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create data table
+        function createDataTable(projection) {
+            const lifePurchasesDisplay = projection.lifePurchaseCosts.map(val => 
+                val !== 0 ? formatNumber(val) : ""
+            );
+
+            let tableHtml = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Age</th>
+                            <th>BOY Net Worth</th>
+                            <th>Pre-Tax Income</th>
+                            <th>Post-Tax Income</th>
+                            <th>Tax Rate (%)</th>
+                            <th>Regular Spending</th>
+                            <th>Life Purchases</th>
+                            <th>Annual Savings</th>
+                            <th>Investment Growth</th>
+                            <th>Retirement Balance</th>
+                            <th>EOY Net Worth</th>
+                            <th>Life Energy (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            const taxRate = parseFloat(document.getElementById('taxRate').value);
+
+            for (let i = 0; i < projection.ages.length; i++) {
+                tableHtml += `
+                    <tr>
+                        <td style="text-align: center; font-weight: bold;">${projection.ages[i]}</td>
+                        <td>${formatNumber(Math.round(projection.boyNetWorth[i]))}</td>
+                        <td>${formatNumber(Math.round(projection.preTaxIncomeValues[i]))}</td>
+                        <td>${formatNumber(projection.postTaxIncome[i])}</td>
+                        <td>${taxRate}%</td>
+                        <td>${formatNumber(projection.spending[i])}</td>
+                        <td>${lifePurchasesDisplay[i]}</td>
+                        <td>${formatNumber(projection.annualSavings[i])}</td>
+                        <td>${formatNumber(projection.investmentGrowthValues[i])}</td>
+                        <td>${formatNumber(projection.retirementBalances[i])}</td>
+                        <td>${formatNumber(projection.eoyNetWorth[i])}</td>
+                        <td>${projection.healthValues[i].toFixed(1)}%</td>
+                    </tr>
+                `;
+            }
+
+            tableHtml += `
+                    </tbody>
+                </table>
+            `;
+
+            document.getElementById('dataTable').innerHTML = tableHtml;
+        }
+
+        // Update life purchases display
+        function updateLifePurchasesDisplay() {
+            const purchasesHtml = lifePurchases.length === 0 
+                ? '<div style="color: var(--text-color); font-style: italic; margin-bottom: 15px;">No life purchases added yet. Add your first purchase below.</div>'
+                : lifePurchases.map((purchase, index) => `
+                    <div class="purchase-item">
+                        <div class="purchase-name">${purchase.name}</div>
+                        <div class="purchase-cost">$${purchase.cost.toLocaleString()}</div>
+                        <div class="purchase-age">Age ${purchase.age}</div>
+                        <div class="purchase-actions">
+                            <button class="btn btn-danger" onclick="deletePurchase(${index})">×</button>
+                        </div>
+                    </div>
+                `).join('');
+
+            document.getElementById('purchasesList').innerHTML = purchasesHtml;
+        }
+
+        // Add purchase
+        function addPurchase() {
+            const name = document.getElementById('purchaseName').value;
+            const cost = parseFloat(document.getElementById('purchaseCost').value);
+            const age = parseInt(document.getElementById('purchaseAge').value);
+
+            if (name && cost && age) {
+                lifePurchases.push({name, cost, age});
+                updateLifePurchasesDisplay();
+                
+                // Clear inputs
+                document.getElementById('purchaseName').value = '';
+                document.getElementById('purchaseCost').value = '';
+                document.getElementById('purchaseAge').value = '';
+            }
+        }
+
+        // Delete purchase
+        function deletePurchase(index) {
+            lifePurchases.splice(index, 1);
+            updateLifePurchasesDisplay();
+        }
+
+        // Optimize spending
+        function optimizeSpending() {
+            // Simple optimization using golden section search
+            let a = 0.1, b = 0.95;
+            const tolerance = 0.0001;
+            const phi = (1 + Math.sqrt(5)) / 2;
+
+            function objective(spendingPercentage) {
+                document.getElementById('spendingPercentage').value = spendingPercentage;
+                const projection = calculateProjection();
+                return Math.abs(projection.finalNetWorth);
+            }
+
+            // Golden section search
+            let c = b - (b - a) / phi;
+            let d = a + (b - a) / phi;
+
+            while (Math.abs(c - d) > tolerance) {
+                if (objective(c) < objective(d)) {
+                    b = d;
+                } else {
+                    a = c;
+                }
+                c = b - (b - a) / phi;
+                d = a + (b - a) / phi;
+            }
+
+            const optimalPercentage = (b + a) / 2;
+            document.getElementById('spendingPercentage').value = Math.round(optimalPercentage * 10000) / 10000;
+
+            // Show optimization result
+            document.getElementById('optimizationValue').textContent = `Optimal Spending: ${(optimalPercentage * 100).toFixed(2)}%`;
+            document.getElementById('optimizationResult').style.display = 'block';
+
+            // Recalculate with optimal value
+            calculate();
+        }
+
+        // Main calculate function
+        function calculate() {
+            const projection = calculateProjection();
+            updateSummaryCards();
+            createCharts(projection);
+            createDataTable(projection);
+        }
+
+        // Export to CSV
+        function exportToCSV() {
+            const projection = calculateProjection();
+            const taxRate = parseFloat(document.getElementById('taxRate').value);
+            
+            const headers = [
+                'Age', 'BOY Net Worth', 'Pre-Tax Income', 'Post-Tax Income', 'Tax Rate (%)',
+                'Regular Spending', 'Life Purchases', 'Annual Savings', 'Investment Growth',
+                'Retirement Balance', 'EOY Net Worth', 'Life Energy (%)'
+            ];
+
+            const rows = projection.ages.map((age, i) => [
+                age,
+                Math.round(projection.boyNetWorth[i]),
+                Math.round(projection.preTaxIncomeValues[i]),
+                projection.postTaxIncome[i],
+                `${taxRate}%`,
+                projection.spending[i],
+                projection.lifePurchaseCosts[i] || '',
+                projection.annualSavings[i],
+                projection.investmentGrowthValues[i],
+                projection.retirementBalances[i],
+                projection.eoyNetWorth[i],
+                `${projection.healthValues[i].toFixed(1)}%`
+            ]);
+
+            const csvContent = [headers, ...rows]
+                .map(row => row.join(','))
+                .join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'die-with-zero-projections.csv';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            updateLifePurchasesDisplay();
+            updateSummaryCards();
+            calculate(); // Initial calculation
+
+            document.getElementById('calculateBtn').addEventListener('click', calculate);
+            document.getElementById('optimizeBtn').addEventListener('click', optimizeSpending);
+            document.getElementById('addPurchaseBtn').addEventListener('click', addPurchase);
+            document.getElementById('exportBtn').addEventListener('click', exportToCSV);
+
+            // Auto-calculate on input changes
+            const inputs = document.querySelectorAll('.input-field, select');
+            inputs.forEach(input => {
+                input.addEventListener('change', calculate);
+            });
+        });
+    </script>
+</body>
+</html>
