@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Jeopardy Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a237e 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 3.5em;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.7);
+            margin-bottom: 20px;
+            letter-spacing: 3px;
+        }
+        
+        .google-y, .google-a, .google-n, .google-u, .google-s {
+            font-family: 'Arial', sans-serif;
+            font-weight: 500;
+        }
+        
+        .google-y { color: #4285F4; }  /* Blue */
+        .google-a { color: #EA4335; }  /* Red */
+        .google-n { color: #FBBC04; }  /* Yellow */
+        .google-u { color: #4285F4; }  /* Blue */
+        .google-s { color: #34A853; }  /* Green */
+        .jeopardy-text { color: #ffd700; }
+
+        .round-indicator {
+            text-align: center;
+            font-size: 1.5em;
+            color: #ffd700;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .setup-section {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .team-setup {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .team-input {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: none;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.9);
+            color: #333;
+        }
+
+        button {
+            background: #ffd700;
+            color: #0a0e27;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #ffed4e;
+            transform: scale(1.05);
+        }
+
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: scale(1);
+        }
+
+        .score-board {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .team-score {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .team-name {
+            font-size: 1.3em;
+            color: #ffd700;
+            margin-bottom: 5px;
+        }
+
+        .score {
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .score.negative {
+            color: #ff6666;
+        }
+
+        .jeopardy-board {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 5px;
+            background: #000;
+            padding: 5px;
+            border-radius: 10px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+            margin-bottom: 20px;
+        }
+
+        .category {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            padding: 15px 10px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.9em;
+            border: 2px solid #ffd700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 80px;
+        }
+
+        .question-cell {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            padding: 20px;
+            text-align: center;
+            font-size: 2em;
+            font-weight: bold;
+            color: #ffd700;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid #2a5298;
+            position: relative;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .question-cell.daily-double {
+            box-shadow: inset 0 0 20px rgba(255,215,0,0.3);
+        }
+
+        .question-cell:hover:not(.revealed) {
+            background: linear-gradient(135deg, #2a5298 0%, #3a62a8 100%);
+            transform: scale(1.05);
+        }
+
+        .question-cell.revealed {
+            background: #0a0e27;
+            cursor: default;
+            color: #666;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        .daily-double-title {
+            font-size: 3em;
+            color: #ffd700;
+            margin-bottom: 20px;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .question-text {
+            font-size: 1.8em;
+            margin-bottom: 30px;
+            color: #ffd700;
+        }
+
+        .answer-text {
+            font-size: 1.4em;
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hidden-answer {
+            filter: blur(10px);
+            user-select: none;
+        }
+
+        .team-buttons {
+            display: grid;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .team-button-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .correct-btn {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .correct-btn:hover {
+            background: #45a049;
+        }
+
+        .wrong-btn {
+            background: #f44336;
+            color: white;
+        }
+
+        .wrong-btn:hover {
+            background: #da190b;
+        }
+
+        .close-modal {
+            margin-top: 20px;
+            background: #666;
+            color: white;
+        }
+
+        .wager-input {
+            font-size: 1.5em;
+            padding: 10px;
+            width: 200px;
+            margin: 10px auto;
+            display: block;
+        }
+
+        .wager-section {
+            margin: 20px 0;
+        }
+
+        .final-jeopardy-section {
+            background: linear-gradient(135deg, #2a5298 0%, #3a62a8 100%);
+            padding: 30px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        .team-wager {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        .players-list {
+            font-size: 0.9em;
+            color: #aaa;
+            margin-top: 5px;
+        }
+
+        .control-buttons {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        #teamNumberSelect {
+            width: auto;
+            display: inline-block;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <span class="google-y">Y</span><span class="google-a">A</span><span class="google-n">N</span><span class="google-u">U</span><span class="google-s">S</span>
+            <span class="jeopardy-text"> JEOPARDY!</span>
+        </h1>
+        <div class="round-indicator" id="roundIndicator"></div>
+        
+        <div class="setup-section" id="setupSection">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <label>Number of Teams: </label>
+                <select id="teamNumberSelect" onchange="updateTeamInputs()">
+                    <option value="2">2 Teams</option>
+                    <option value="3">3 Teams</option>
+                    <option value="4">4 Teams</option>
+                    <option value="5">5 Teams</option>
+                    <option value="6">6 Teams</option>
+                </select>
+            </div>
+            <div class="team-setup" id="teamSetupContainer"></div>
+            <div style="text-align: center;">
+                <button onclick="startGame()">Start Game</button>
+            </div>
+        </div>
+
+        <div class="score-board" id="scoreBoard" style="display: none;"></div>
+
+        <div class="jeopardy-board" id="board" style="display: none;"></div>
+
+        <div class="control-buttons" id="controlButtons" style="display: none;">
+            <button onclick="nextRound()" id="nextRoundBtn" style="display: none;">Go to Double Jeopardy</button>
+            <br><br>
+            <div style="opacity: 0.7; font-size: 0.9em; margin-top: 20px;">⚡ Quick Navigation (for testing):</div>
+            <button onclick="skipToRound('double')" style="background: #666; font-size: 0.9em;">Skip to Double Jeopardy</button>
+            <button onclick="skipToRound('final')" style="background: #666; font-size: 0.9em;">Skip to Final Jeopardy</button>
+        </div>
+    </div>
+
+    <div class="modal" id="questionModal">
+        <div class="modal-content" id="modalContent"></div>
+    </div>
+
+    <script>
+        const categories = [
+            // First 6 for Jeopardy round
+            {
+                name: "OK ZOOMER",
+                fullName: "Gen Z Pop Culture",
+                questions: [
+                    {q: "This social media platform, known for short videos, was almost banned in the US multiple times.", a: "What is TikTok?"},
+                    {q: "This term describes the aesthetic of romanticizing your everyday life, often seen on social media.", a: "What is 'main character energy'?"},
+                    {q: "This Gen Z slang term means something is suspicious or questionable.", a: "What is 'sus'?"},
+                    {q: "This 2021 Netflix series about deadly children's games became the most-watched show on the platform.", a: "What is Squid Game?"},
+                    {q: "This photo-sharing app introduced 'BeReal' notifications to capture authentic moments.", a: "What is BeReal?"}
+                ]
+            },
+            {
+                name: "HOOPS & DREAMS",
+                fullName: "NBA Basketball 2015-2025",
+                questions: [
+                    {q: "This team overcame a 3-1 deficit to defeat the 73-win Warriors in the 2016 Finals.", a: "Who are the Cleveland Cavaliers?"},
+                    {q: "This Greek player won back-to-back MVP awards in 2019 and 2020.", a: "Who is Giannis Antetokounmpo?"},
+                    {q: "This team won the 2019 championship, their first title in franchise history.", a: "Who are the Toronto Raptors?"},
+                    {q: "This player scored 70 points in a game for the Phoenix Suns in 2017.", a: "Who is Devin Booker?"},
+                    {q: "This team won the 2024 NBA Championship led by Jayson Tatum.", a: "Who are the Boston Celtics?"}
+                ]
+            },
+            {
+                name: "DESERT STORM",
+                fullName: "Middle Eastern Geopolitics",
+                questions: [
+                    {q: "This 2020 agreement normalized relations between Israel and several Arab states.", a: "What are the Abraham Accords?"},
+                    {q: "This country experienced a devastating port explosion in Beirut in 2020.", a: "What is Lebanon?"},
+                    {q: "This Saudi Crown Prince initiated the Vision 2030 reform program.", a: "Who is Mohammed bin Salman?"},
+                    {q: "This body of water is a major shipping route that passes through the Suez Canal.", a: "What is the Red Sea?"},
+                    {q: "This organization controls Gaza and has been in conflict with Israel.", a: "What is Hamas?"}
+                ]
+            },
+            {
+                name: "ELECTRIC AVENUE",
+                fullName: "Modern Automobiles",
+                questions: [
+                    {q: "This Tesla model became the best-selling electric vehicle globally in 2021.", a: "What is the Model 3?"},
+                    {q: "This traditional automaker's electric F-150 shares this electrifying name.", a: "What is the Lightning?"},
+                    {q: "This German automaker's 'ID' series represents their electric vehicle line.", a: "What is Volkswagen?"},
+                    {q: "This technology allows cars to drive themselves without human intervention.", a: "What is autonomous driving?"},
+                    {q: "This startup, backed by Amazon, makes electric delivery vans and pickup trucks.", a: "What is Rivian?"}
+                ]
+            },
+            {
+                name: "SHE PERSISTED",
+                fullName: "Women's Health",
+                questions: [
+                    {q: "This monthly cycle typically lasts 28 days in reproductive-age women.", a: "What is the menstrual cycle?"},
+                    {q: "This condition affects 1 in 10 women and causes tissue similar to the uterine lining to grow outside the uterus.", a: "What is endometriosis?"},
+                    {q: "This type of cancer is screened for using a Pap smear.", a: "What is cervical cancer?"},
+                    {q: "This syndrome, abbreviated PCOS, affects hormone levels and ovarian function.", a: "What is Polycystic Ovary Syndrome?"},
+                    {q: "This imaging test uses X-rays to examine breast tissue for early signs of cancer.", a: "What is a mammogram?"}
+                ]
+            },
+            {
+                name: "RHYME TIME WITH MOULAY",
+                fullName: "Words that Rhyme with Moulay",
+                questions: [
+                    {q: "This French word for a festive dance or party rhymes with Moulay.", a: "What is soirée?"},
+                    {q: "This word meaning to put off or postpone rhymes with Moulay.", a: "What is delay?"},
+                    {q: "This word for a public exhibition or presentation rhymes with Moulay.", a: "What is display?"},
+                    {q: "This word for a flat dish or tray rhymes with Moulay.", a: "What is a tray?"},
+                    {q: "This word meaning to communicate or pass on rhymes with Moulay.", a: "What is relay?"}
+                ]
+            },
+            // Next 6 for Double Jeopardy round
+            {
+                name: "THE BIG ONE",
+                fullName: "World War 2",
+                questions: [
+                    {q: "This June 6, 1944 invasion of Normandy is better known by this letter.", a: "What is D-Day?"},
+                    {q: "This Japanese attack on December 7, 1941, brought the US into the war.", a: "What is Pearl Harbor?"},
+                    {q: "This British Prime Minister promised 'blood, toil, tears and sweat'.", a: "Who is Winston Churchill?"},
+                    {q: "This project developed the atomic bombs dropped on Japan.", a: "What is the Manhattan Project?"},
+                    {q: "This battle is considered the turning point of the war in the Pacific.", a: "What is Midway?"}
+                ]
+            },
+            {
+                name: "CALCULATED",
+                fullName: "History of Math",
+                questions: [
+                    {q: "This ancient Greek mathematician wrote 'Elements', the most influential math textbook ever.", a: "Who is Euclid?"},
+                    {q: "This Indian mathematician introduced the concept of zero to mathematics.", a: "Who is Brahmagupta?"},
+                    {q: "This theorem states a² + b² = c² for right triangles.", a: "What is the Pythagorean theorem?"},
+                    {q: "This 17th-century mathematician invented calculus alongside Newton.", a: "Who is Leibniz?"},
+                    {q: "This Persian mathematician's name gave us the word 'algorithm'.", a: "Who is Al-Khwarizmi?"}
+                ]
+            },
+            {
+                name: "SPACE RACE",
+                fullName: "Astronomy",
+                questions: [
+                    {q: "This dwarf planet was demoted from full planet status in 2006.", a: "What is Pluto?"},
+                    {q: "This is the closest star to Earth after the Sun.", a: "What is Proxima Centauri?"},
+                    {q: "This telescope launched in 2021 is the successor to Hubble.", a: "What is the James Webb Space Telescope?"},
+                    {q: "This phenomenon occurs when a massive star collapses and explodes.", a: "What is a supernova?"},
+                    {q: "This is the name of our galaxy.", a: "What is the Milky Way?"}
+                ]
+            },
+            {
+                name: "TOTALLY RAD",
+                fullName: "80s Pop Culture",
+                questions: [
+                    {q: "This 1985 film features a DeLorean time machine.", a: "What is Back to the Future?"},
+                    {q: "This King of Pop released 'Thriller' in 1982.", a: "Who is Michael Jackson?"},
+                    {q: "This arcade game featured a yellow character eating dots and avoiding ghosts.", a: "What is Pac-Man?"},
+                    {q: "This hair style business in the front, party in the back was popular in the 80s.", a: "What is a mullet?"},
+                    {q: "This MTV show debuted in 1981 with 'Video Killed the Radio Star'.", a: "What is MTV (Music Television)?"}
+                ]
+            },
+            {
+                name: "YANKEE DOODLE",
+                fullName: "US History",
+                questions: [
+                    {q: "This 1803 purchase doubled the size of the United States.", a: "What is the Louisiana Purchase?"},
+                    {q: "This amendment gave women the right to vote in 1920.", a: "What is the 19th Amendment?"},
+                    {q: "This president was never elected as president or vice president.", a: "Who is Gerald Ford?"},
+                    {q: "This 1863 proclamation freed slaves in Confederate states.", a: "What is the Emancipation Proclamation?"},
+                    {q: "This scandal led to President Nixon's resignation in 1974.", a: "What is Watergate?"}
+                ]
+            },
+            {
+                name: "GOOOAAL!",
+                fullName: "European Soccer",
+                questions: [
+                    {q: "This Portuguese player has won five Ballon d'Or awards.", a: "Who is Cristiano Ronaldo?"},
+                    {q: "This English club has won the most Premier League titles.", a: "What is Manchester United?"},
+                    {q: "This Spanish team has won the most Champions League titles.", a: "What is Real Madrid?"},
+                    {q: "This country won the 2018 World Cup in Russia.", a: "What is France?"},
+                    {q: "This annual match between Barcelona and Real Madrid is known by this Spanish term.", a: "What is El Clásico?"}
+                ]
+            }
+        ];
+
+        const finalJeopardyQuestion = {
+            category: "ISLAND NATIONS",
+            q: "This island nation in the Indian Ocean, located about 250 miles off the southeastern coast of Africa, is home to over 150 species of chameleons found nowhere else on Earth.",
+            a: "What is Madagascar?"
+        };
+
+        let teams = [];
+        let currentRound = 'jeopardy'; // 'jeopardy', 'double', 'final'
+        let currentValue = 0;
+        let currentCell = null;
+        let isDailyDouble = false;
+        let dailyDoubles = [];
+        let jeopardyQuestionsAnswered = 0;
+        let doubleJeopardyQuestionsAnswered = 0;
+
+        function updateTeamInputs() {
+            const numTeams = parseInt(document.getElementById('teamNumberSelect').value);
+            const container = document.getElementById('teamSetupContainer');
+            container.innerHTML = '';
+            
+            for (let i = 1; i <= numTeams; i++) {
+                const teamDiv = document.createElement('div');
+                teamDiv.className = 'team-input';
+                teamDiv.innerHTML = `
+                    <input type="text" id="team${i}Name" placeholder="Team ${i} Name">
+                    <input type="text" id="team${i}Players" placeholder="Player names (comma separated)">
+                `;
+                container.appendChild(teamDiv);
+            }
+        }
+
+        function startGame() {
+            const numTeams = parseInt(document.getElementById('teamNumberSelect').value);
+            teams = [];
+            
+            for (let i = 1; i <= numTeams; i++) {
+                teams.push({
+                    name: document.getElementById(`team${i}Name`).value || `Team ${i}`,
+                    players: document.getElementById(`team${i}Players`).value || '',
+                    score: 0
+                });
+            }
+
+            document.getElementById('setupSection').style.display = 'none';
+            document.getElementById('scoreBoard').style.display = 'grid';
+            document.getElementById('board').style.display = 'grid';
+            document.getElementById('controlButtons').style.display = 'block';
+            document.getElementById('roundIndicator').textContent = 'JEOPARDY ROUND';
+            document.getElementById('nextRoundBtn').textContent = 'Go to Double Jeopardy';
+            
+            updateScoreBoard();
+            generateBoard();
+        }
+
+        function updateScoreBoard() {
+            const scoreBoard = document.getElementById('scoreBoard');
+            scoreBoard.style.gridTemplateColumns = `repeat(${Math.min(teams.length, 3)}, 1fr)`;
+            scoreBoard.innerHTML = '';
+            
+            teams.forEach((team, index) => {
+                const teamDiv = document.createElement('div');
+                teamDiv.className = 'team-score';
+                teamDiv.innerHTML = `
+                    <div class="team-name">${team.name}</div>
+                    <div class="players-list">${team.players}</div>
+                    <div class="score ${team.score < 0 ? 'negative' : ''}" id="team${index}Score">$${team.score}</div>
+                `;
+                scoreBoard.appendChild(teamDiv);
+            });
+        }
+
+        function generateBoard() {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+            dailyDoubles = [];
+
+            const startIdx = currentRound === 'jeopardy' ? 0 : 6;
+            const selectedCategories = categories.slice(startIdx, startIdx + 6);
+            const multiplier = currentRound === 'double' ? 2 : 1;
+
+            // Add category headers
+            selectedCategories.forEach(cat => {
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'category';
+                categoryDiv.textContent = cat.name;
+                board.appendChild(categoryDiv);
+            });
+
+            // Generate random Daily Double positions (2 per round)
+            while (dailyDoubles.length < 2) {
+                const catIdx = Math.floor(Math.random() * 6);
+                const valIdx = Math.floor(Math.random() * 5);
+                const pos = `${catIdx}-${valIdx}`;
+                if (!dailyDoubles.includes(pos)) {
+                    dailyDoubles.push(pos);
+                }
+            }
+
+            // Add questions
+            for (let value = 0; value < 5; value++) {
+                selectedCategories.forEach((cat, catIndex) => {
+                    const questionDiv = document.createElement('div');
+                    questionDiv.className = 'question-cell';
+                    const dollarValue = (value + 1) * 200 * multiplier;
+                    questionDiv.textContent = `$${dollarValue}`;
+                    
+                    const isDD = dailyDoubles.includes(`${catIndex}-${value}`);
+                    
+                    questionDiv.onclick = () => showQuestion(cat.questions[value], dollarValue, questionDiv, isDD);
+                    board.appendChild(questionDiv);
+                });
+            }
+        }
+
+        function showQuestion(question, value, cell, isDD) {
+            if (cell.classList.contains('revealed')) return;
+
+            currentValue = value;
+            currentCell = cell;
+            isDailyDouble = isDD;
+            
+            const modal = document.getElementById('modalContent');
+            
+            if (isDailyDouble) {
+                modal.innerHTML = `
+                    <div class="daily-double-title">DAILY DOUBLE!</div>
+                    <div class="wager-section">
+                        <p>Select the team and enter their wager:</p>
+                        <select id="ddTeamSelect">
+                            ${teams.map((team, idx) => `<option value="${idx}">${team.name}</option>`).join('')}
+                        </select>
+                        <input type="number" id="wagerAmount" class="wager-input" placeholder="Wager Amount" min="0">
+                        <p id="maxWagerText" style="color: #ffd700; margin-top: 10px;"></p>
+                        <button onclick="submitDailyDoubleWager('${encodeURIComponent(JSON.stringify(question))}')">Submit Wager</button>
+                    </div>
+                `;
+                
+                // Update max wager text when team changes
+                document.getElementById('ddTeamSelect').onchange = updateMaxWager;
+                updateMaxWager();
+            } else {
+                showRegularQuestion(question);
+            }
+            
+            document.getElementById('questionModal').style.display = 'block';
+        }
+
+        function updateMaxWager() {
+            const teamIdx = document.getElementById('ddTeamSelect').value;
+            const team = teams[teamIdx];
+            const maxWager = Math.max(1000, team.score);
+            document.getElementById('maxWagerText').textContent = `Maximum wager: $${maxWager}`;
+            document.getElementById('wagerAmount').max = maxWager;
+        }
+
+        function submitDailyDoubleWager(questionJson) {
+            const question = JSON.parse(decodeURIComponent(questionJson));
+            const teamIdx = parseInt(document.getElementById('ddTeamSelect').value);
+            const wager = parseInt(document.getElementById('wagerAmount').value) || 0;
+            const maxWager = Math.max(1000, teams[teamIdx].score);
+            
+            if (wager > maxWager) {
+                alert(`Maximum wager is $${maxWager}`);
+                return;
+            }
+            
+            currentValue = wager;
+            showDailyDoubleQuestion(question, teamIdx);
+        }
+
+        function showDailyDoubleQuestion(question, teamIdx) {
+            const modal = document.getElementById('modalContent');
+            modal.innerHTML = `
+                <div class="daily-double-title">DAILY DOUBLE!</div>
+                <div class="question-text">${question.q}</div>
+                <div class="answer-text hidden-answer" id="answerText">${question.a}</div>
+                <button onclick="revealAnswer()">Reveal Answer</button>
+                <div class="team-buttons" id="teamButtons" style="display: none;">
+                    <button class="correct-btn" onclick="dailyDoubleResult(${teamIdx}, true)">${teams[teamIdx].name} Got It Right!</button>
+                    <button class="wrong-btn" onclick="dailyDoubleResult(${teamIdx}, false)">${teams[teamIdx].name} Got It Wrong</button>
+                </div>
+            `;
+        }
+
+        function showRegularQuestion(question) {
+            const modal = document.getElementById('modalContent');
+            modal.innerHTML = `
+                <div class="question-text">${question.q}</div>
+                <div class="answer-text hidden-answer" id="answerText">${question.a}</div>
+                <button onclick="revealAnswer()">Reveal Answer</button>
+                <div class="team-buttons" id="teamButtons" style="display: none;">
+                    ${teams.map((team, idx) => `
+                        <div class="team-button-row" data-team="${idx}">
+                            <button class="correct-btn" onclick="awardPoints(${idx}, true)">${team.name} Correct (+${currentValue})</button>
+                            <button class="wrong-btn" onclick="awardPoints(${idx}, false)">${team.name} Wrong (-${currentValue})</button>
+                        </div>
+                    `).join('')}
+                    <button class="close-modal" onclick="closeModal()">No One Got It / Skip</button>
+                </div>
+            `;
+        }
+
+        function revealAnswer() {
+            document.getElementById('answerText').classList.remove('hidden-answer');
+            document.getElementById('teamButtons').style.display = 'block';
+        }
+
+        function awardPoints(teamIdx, correct) {
+            if (correct) {
+                teams[teamIdx].score += currentValue;
+                updateScoreBoard();
+                markQuestionComplete(); // Only complete if someone got it right
+            } else {
+                teams[teamIdx].score -= currentValue;
+                updateScoreBoard();
+                // Don't complete the question - allow another team to try
+                // Disable the buttons for this team
+                const teamRow = document.querySelector(`#teamButtons .team-button-row[data-team="${teamIdx}"]`);
+                if (teamRow) {
+                    teamRow.querySelectorAll('button').forEach(btn => {
+                        btn.disabled = true;
+                        btn.style.opacity = '0.5';
+                    });
+                }
+            }
+        }
+
+        function dailyDoubleResult(teamIdx, correct) {
+            if (correct) {
+                teams[teamIdx].score += currentValue;
+            } else {
+                teams[teamIdx].score -= currentValue;
+            }
+            updateScoreBoard();
+            markQuestionComplete(); // Daily Doubles always complete after one attempt
+        }
+
+        function markQuestionComplete() {
+            currentCell.classList.add('revealed');
+            currentCell.textContent = '';
+            
+            if (currentRound === 'jeopardy') {
+                jeopardyQuestionsAnswered++;
+                // Check if Jeopardy round is complete
+                if (jeopardyQuestionsAnswered >= 30) {
+                    document.getElementById('nextRoundBtn').textContent = 'Go to Double Jeopardy';
+                    document.getElementById('nextRoundBtn').style.display = 'inline-block';
+                }
+            } else if (currentRound === 'double') {
+                doubleJeopardyQuestionsAnswered++;
+                // Check if Double Jeopardy round is complete
+                if (doubleJeopardyQuestionsAnswered >= 30) {
+                    document.getElementById('nextRoundBtn').textContent = 'Go to Final Jeopardy';
+                    document.getElementById('nextRoundBtn').style.display = 'inline-block';
+                }
+            }
+            
+            closeModal();
+        }
+
+        function closeModal() {
+            if (currentCell && !currentCell.classList.contains('revealed')) {
+                currentCell.classList.add('revealed');
+                currentCell.textContent = '';
+                
+                if (currentRound === 'jeopardy') {
+                    jeopardyQuestionsAnswered++;
+                    // Check if Jeopardy round is complete
+                    if (jeopardyQuestionsAnswered >= 30) {
+                        document.getElementById('nextRoundBtn').textContent = 'Go to Double Jeopardy';
+                        document.getElementById('nextRoundBtn').style.display = 'inline-block';
+                    }
+                } else if (currentRound === 'double') {
+                    doubleJeopardyQuestionsAnswered++;
+                    // Check if Double Jeopardy round is complete
+                    if (doubleJeopardyQuestionsAnswered >= 30) {
+                        document.getElementById('nextRoundBtn').textContent = 'Go to Final Jeopardy';
+                        document.getElementById('nextRoundBtn').style.display = 'inline-block';
+                    }
+                }
+            }
+            document.getElementById('questionModal').style.display = 'none';
+        }
+
+        function skipToRound(round) {
+            if (round === 'double') {
+                currentRound = 'double';
+                document.getElementById('roundIndicator').textContent = 'DOUBLE JEOPARDY!';
+                document.getElementById('nextRoundBtn').style.display = 'none';
+                document.getElementById('board').style.display = 'grid';
+                generateBoard();
+            } else if (round === 'final') {
+                showFinalJeopardy();
+            }
+        }
+
+        function nextRound() {
+            if (currentRound === 'jeopardy') {
+                currentRound = 'double';
+                document.getElementById('roundIndicator').textContent = 'DOUBLE JEOPARDY!';
+                document.getElementById('nextRoundBtn').style.display = 'none';
+                document.getElementById('nextRoundBtn').textContent = 'Go to Final Jeopardy';
+                document.getElementById('board').style.display = 'grid';
+                generateBoard();
+            } else if (currentRound === 'double') {
+                showFinalJeopardy();
+            }
+        }
+
+        function showFinalJeopardy() {
+            currentRound = 'final';
+            document.getElementById('roundIndicator').textContent = 'FINAL JEOPARDY!';
+            document.getElementById('board').style.display = 'none';
+            document.getElementById('controlButtons').style.display = 'none';
+            document.getElementById('nextRoundBtn').style.display = 'none';
+            
+            const modal = document.getElementById('modalContent');
+            modal.innerHTML = `
+                <div class="final-jeopardy-section">
+                    <h2 style="color: #ffd700; font-size: 2.5em; margin-bottom: 20px;">FINAL JEOPARDY!</h2>
+                    <div style="font-size: 1.8em; color: #ffd700; margin-bottom: 30px;">Category: ${finalJeopardyQuestion.category}</div>
+                    <div class="wager-section">
+                        <h3>Enter Wagers:</h3>
+                        ${teams.map((team, idx) => `
+                            <div class="team-wager">
+                                <label style="font-size: 1.2em;">${team.name} (Current: $${team.score})</label>
+                                <input type="number" id="finalWager${idx}" class="wager-input" 
+                                       min="0" max="${Math.max(0, team.score)}" 
+                                       placeholder="Wager (Max: $${Math.max(0, team.score)})">
+                            </div>
+                        `).join('')}
+                        <button onclick="showFinalQuestion()">Show Final Jeopardy Question</button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('questionModal').style.display = 'block';
+        }
+
+        function showFinalQuestion() {
+            const wagers = teams.map((team, idx) => {
+                const wagerInput = document.getElementById(`finalWager${idx}`);
+                const wager = parseInt(wagerInput.value) || 0;
+                const maxWager = Math.max(0, team.score);
+                return Math.min(wager, maxWager);
+            });
+            
+            const modal = document.getElementById('modalContent');
+            modal.innerHTML = `
+                <div class="final-jeopardy-section">
+                    <h2 style="color: #ffd700; font-size: 2em;">FINAL JEOPARDY!</h2>
+                    <div style="font-size: 1.5em; color: #ffd700; margin: 20px 0;">Category: ${finalJeopardyQuestion.category}</div>
+                    <div class="question-text" style="font-size: 1.6em; margin: 30px 0;">${finalJeopardyQuestion.q}</div>
+                    <div class="answer-text hidden-answer" id="answerText">${finalJeopardyQuestion.a}</div>
+                    <button onclick="revealAnswer()">Reveal Answer</button>
+                    <div id="teamButtons" style="display: none; margin-top: 30px;">
+                        <h3>Mark Results:</h3>
+                        ${teams.map((team, idx) => `
+                            <div class="team-button-row" data-team="${idx}" style="margin: 10px 0;">
+                                <span style="display: inline-block; width: 200px;">${team.name} (Wager: ${wagers[idx]})</span>
+                                <button class="correct-btn" onclick="finalJeopardyResult(${idx}, ${wagers[idx]}, true)">Correct</button>
+                                <button class="wrong-btn" onclick="finalJeopardyResult(${idx}, ${wagers[idx]}, false)">Wrong</button>
+                            </div>
+                        `).join('')}
+                        <button onclick="showFinalScores()" style="margin-top: 20px; background: #ffd700;">Show Final Scores</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function finalJeopardyResult(teamIdx, wager, correct) {
+            if (correct) {
+                teams[teamIdx].score += wager;
+            } else {
+                teams[teamIdx].score -= wager;
+            }
+            // Disable buttons for this team after they've answered
+            const teamRow = document.querySelector(`#teamButtons .team-button-row[data-team="${teamIdx}"]`);
+            if (teamRow) {
+                teamRow.style.opacity = '0.5';
+                teamRow.querySelectorAll('button').forEach(btn => {
+                    btn.disabled = true;
+                });
+            }
+            updateScoreBoard();
+        }
+
+        function showFinalScores() {
+            const sortedTeams = [...teams].sort((a, b) => b.score - a.score);
+            const modal = document.getElementById('modalContent');
+            modal.innerHTML = `
+                <div class="final-jeopardy-section">
+                    <h2 style="color: #ffd700; font-size: 3em; margin-bottom: 30px;">🏆 FINAL SCORES 🏆</h2>
+                    ${sortedTeams.map((team, idx) => `
+                        <div style="font-size: 1.8em; margin: 15px 0; ${idx === 0 ? 'color: #ffd700;' : ''}">
+                            ${idx === 0 ? '👑 ' : ''}${idx + 1}. ${team.name}: $${team.score}
+                        </div>
+                    `).join('')}
+                    <button onclick="location.reload()" style="margin-top: 30px;">New Game</button>
+                </div>
+            `;
+        }
+
+        // Initialize with 2 teams
+        updateTeamInputs();
+    </script>
+</body>
+</html>
