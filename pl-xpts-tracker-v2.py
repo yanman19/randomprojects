@@ -584,5 +584,6 @@ def render_content(tab, proj_data, pred_data, standings_data):
 if __name__ == '__main__':
     print("\n" + "="*70)
     print("Starting Premier League xPTS Tracker on port 8900")
+    print("Access at: http://localhost:8900 (or your forwarded URL)")
     print("="*70 + "\n")
-    app.run(debug=True, port=8900)
+    app.run(debug=True, host='0.0.0.0', port=8900)
