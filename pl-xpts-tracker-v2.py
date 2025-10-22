@@ -493,6 +493,8 @@ def get_team_upcoming_matches(team, predictions_df):
         away[['date', 'opponent', 'venue', 'predicted_score', 'xPTS', 'xG', 'xGA']]
     ]).sort_values('date')
 
+    # Convert date to datetime if it's not already, then format as string
+    all_matches['date'] = pd.to_datetime(all_matches['date'])
     all_matches['Date'] = all_matches['date'].dt.strftime('%Y-%m-%d')
     return all_matches[['Date', 'opponent', 'venue', 'predicted_score', 'xPTS', 'xG', 'xGA']].rename(columns={'opponent': 'Opponent', 'venue': 'Venue', 'predicted_score': 'Predicted Score'})
 
@@ -654,6 +656,9 @@ def render_content(tab, proj_data, pred_data, standings_data):
         projections_df = pd.DataFrame(proj_data)
     if pred_data:
         predictions_df = pd.DataFrame(pred_data)
+        # Convert date column back to datetime after loading from store
+        if 'date' in predictions_df.columns:
+            predictions_df['date'] = pd.to_datetime(predictions_df['date'])
     if standings_data:
         current_standings = standings_data
 
