@@ -584,27 +584,16 @@ app.layout = dbc.Container([
     dcc.Store(id='projections-store', data=projections_df.to_dict('records')),
     dcc.Store(id='teams-list-store', data=PREMIER_LEAGUE_TEAMS),
 
-    html.Div(id='tabs-container'),
+    dcc.Tabs(id='main-tabs', value='home', children=[
+        dcc.Tab(label='🏠 Home', value='home'),
+        *[dcc.Tab(label=team, value=team) for team in PREMIER_LEAGUE_TEAMS]
+    ]),
     html.Div(id='page-content')
 ], fluid=True, style={'padding': '0'})
 
 # ==============================
 # CALLBACKS
 # ==============================
-
-@app.callback(
-    Output('tabs-container', 'children'),
-    Input('teams-list-store', 'data')
-)
-def update_tabs(teams_list):
-    """Update tabs when team list changes"""
-    if not teams_list:
-        teams_list = PREMIER_LEAGUE_TEAMS
-
-    return dcc.Tabs(id='main-tabs', value='home', children=[
-        dcc.Tab(label='🏠 Home', value='home'),
-        *[dcc.Tab(label=team, value=team) for team in sorted(teams_list)]
-    ])
 
 @app.callback(
     [Output('home-data-store', 'data'),
