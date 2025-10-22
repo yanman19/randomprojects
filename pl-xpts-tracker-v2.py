@@ -94,64 +94,142 @@ def create_mock_team_stats():
     return pd.DataFrame(home_data), pd.DataFrame(away_data)
 
 # ==============================
-# DATA FETCHING FROM FBREF
+# DATA FETCHING FROM UNDERSTAT.COM
 # ==============================
 
-def fetch_fresh_data():
-    """Attempt to fetch fresh data from fbref.com"""
-    print("Attempting to fetch data from fbref.com...")
-    time.sleep(3)
+def extract_teams_data_from_html(html: str) -> dict:
+    """Extract teamsData JSON from understat HTML"""
+    import re
+    import json
 
-    url = "https://fbref.com/en/comps/9/Premier-League-Stats"
+    m = re.search(r"var\s+teamsData\s*=\s*JSON\.parse\('([^']+)'\);", html)
+    if not m:
+        raise RuntimeError("Understat teamsData not found in HTML.")
+    raw = m.group(1)
+    raw = raw.encode("utf-8").decode("unicode_escape").replace("\\'", "'")
+    return json.loads(raw)
+
+def http_get_understat(url, retries=3, timeout=15):
+    """HTTP GET with retries for understat.com"""
     headers = {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Cache-Control": "no-cache",
     }
+    last_err = None
+    for i in range(retries):
+        try:
+            r = requests.get(url, headers=headers, timeout=timeout)
+            r.raise_for_status()
+            return r.text
+        except Exception as e:
+            last_err = e
+            time.sleep(1 + i)
+    raise RuntimeError(f"Failed to fetch {url}: {last_err}")
 
-    response = requests.get(url, headers=headers, timeout=15)
-    response.raise_for_status()
+def fetch_fresh_data(season=2025):
+    """Fetch fresh data from understat.com"""
+    print(f"Attempting to fetch data from understat.com for season {season}...")
 
-    dfs = pd.read_html(StringIO(response.text))
-    df = dfs[1]
+    html = http_get_understat(f"https://understat.com/league/EPL/{season}")
+    teams_data = extract_teams_data_from_html(html)
 
-    df.columns = [
-        "Rk","Squad",
-        "Home_MP", "Home_W", "Home_D", "Home_L", "Home_GF", "Home_GA", "Home_GD", "Home_Pts",'Home_Pts/MP', "Home_xG", "Home_xGA", "Home_xGD", "Home_xGD_per_90",
-        "Away_MP", "Away_W", "Away_D", "Away_L", "Away_GF", "Away_GA", "Away_GD", "Away_Pts",'Away_Pts/MP', "Away_xG", "Away_xGA", "Away_xGD", "Away_xGD_per_90"
-    ]
-
-    home_df = df[["Rk", "Squad", "Home_MP", "Home_W", "Home_D", "Home_L", "Home_GF", "Home_GA", "Home_GD", "Home_Pts", "Home_xG", "Home_xGA", "Home_xGD", "Home_xGD_per_90"]].copy()
-    away_df = df[["Rk", "Squad", "Away_MP", "Away_W", "Away_D", "Away_L", "Away_GF", "Away_GA", "Away_GD", "Away_Pts", "Away_xG", "Away_xGA", "Away_xGD", "Away_xGD_per_90"]].copy()
-
-    home_df.rename(columns={"Home_MP": "MP", "Home_W": "W", "Home_D": "D", "Home_L": "L", "Home_GF": "GF", "Home_GA": "GA", "Home_GD": "GD", "Home_Pts": "Pts", "Home_xG": "xG", "Home_xGA": "xGA", "Home_xGD": "xGD", "Home_xGD_per_90": "xGD_per_90"}, inplace=True)
-    away_df.rename(columns={"Away_MP": "MP", "Away_W": "W", "Away_D": "D", "Away_L": "L", "Away_GF": "GF", "Away_GA": "GA", "Away_GD": "GD", "Away_Pts": "Pts", "Away_xG": "xG", "Away_xGA": "xGA", "Away_xGD": "xGD", "Away_xGD_per_90": "xGD_per_90"}, inplace=True)
-
-    home_df['wxG'] = (home_df['xG'] * 0.7 + home_df['GF'] * 0.3).round(2)
-    home_df['wxGA'] = (home_df['xGA'] * 0.7 + home_df['GA'] * 0.3).round(2)
-    away_df['wxG'] = (away_df['xG'] * 0.7 + away_df['GF'] * 0.3).round(2)
-    away_df['wxGA'] = (away_df['xGA'] * 0.7 + away_df['GA'] * 0.3).round(2)
-
-    home_df['Normalized wxG/90'] = (home_df['wxG'] / home_df['MP']).round(2)
-    away_df['Normalized wxG/90'] = (away_df['wxG'] / away_df['MP']).round(2)
-    home_df['Normalized wxGA/90'] = (home_df['wxGA'] / home_df['MP']).round(2)
-    away_df['Normalized wxGA/90'] = (away_df['wxGA'] / away_df['MP']).round(2)
-
-    # Update current standings
+    rows_home, rows_away = [], []
     standings = {}
-    for _, row in df.iterrows():
-        team = row['Squad']
-        standings[team] = {
-            'points': int(row['Home_Pts'] + row['Away_Pts']),
-            'mp': int(row['Home_MP'] + row['Away_MP']),
-            'w': int(row['Home_W'] + row['Away_W']),
-            'd': int(row['Home_D'] + row['Away_D']),
-            'l': int(row['Home_L'] + row['Away_L']),
-            'gf': int(row['Home_GF'] + row['Away_GF']),
-            'ga': int(row['Home_GA'] + row['Away_GA'])
+
+    for _, team in teams_data.items():
+        team_name = team.get("title") or team.get("team_title")
+
+        # Initialize home/away stats
+        h = {"MP": 0, "xG": 0.0, "xGA": 0.0, "G": 0, "GA": 0, "Pts": 0, "W": 0, "D": 0, "L": 0}
+        a = {"MP": 0, "xG": 0.0, "xGA": 0.0, "G": 0, "GA": 0, "Pts": 0, "W": 0, "D": 0, "L": 0}
+
+        # Process match history
+        for game in team.get("history", []):
+            side = game.get("h_a")
+            xg = float(game.get("xG", 0.0))
+            xga = float(game.get("xGA", 0.0))
+            goals_scored = int(game.get("scored", game.get("goals", 0)))
+            goals_against = int(game.get("missed", game.get("conceded", 0)))
+
+            # Determine result
+            if goals_scored > goals_against:
+                pts, result = 3, "W"
+            elif goals_scored < goals_against:
+                pts, result = 0, "L"
+            else:
+                pts, result = 1, "D"
+
+            if side == "h":
+                h["MP"] += 1
+                h["xG"] += xg
+                h["xGA"] += xga
+                h["G"] += goals_scored
+                h["GA"] += goals_against
+                h["Pts"] += pts
+                h[result] += 1
+            elif side == "a":
+                a["MP"] += 1
+                a["xG"] += xg
+                a["xGA"] += xga
+                a["G"] += goals_scored
+                a["GA"] += goals_against
+                a["Pts"] += pts
+                a[result] += 1
+
+        # Calculate weighted xG (70% xG, 30% actual goals)
+        wxG_home = 0.7 * h["xG"] + 0.3 * h["G"]
+        wxGA_home = 0.7 * h["xGA"] + 0.3 * h["GA"]
+        wxG_away = 0.7 * a["xG"] + 0.3 * a["G"]
+        wxGA_away = 0.7 * a["xGA"] + 0.3 * a["GA"]
+
+        # Add to DataFrames
+        rows_home.append({
+            "Squad": team_name,
+            "MP": h["MP"],
+            "GF": h["G"],
+            "GA": h["GA"],
+            "Pts": h["Pts"],
+            "xG": h["xG"],
+            "xGA": h["xGA"],
+            "wxG": wxG_home,
+            "wxGA": wxGA_home,
+            "Normalized wxG/90": (wxG_home / h["MP"]) if h["MP"] > 0 else 0.0,
+            "Normalized wxGA/90": (wxGA_home / h["MP"]) if h["MP"] > 0 else 0.0
+        })
+
+        rows_away.append({
+            "Squad": team_name,
+            "MP": a["MP"],
+            "GF": a["G"],
+            "GA": a["GA"],
+            "Pts": a["Pts"],
+            "xG": a["xG"],
+            "xGA": a["xGA"],
+            "wxG": wxG_away,
+            "wxGA": wxGA_away,
+            "Normalized wxG/90": (wxG_away / a["MP"]) if a["MP"] > 0 else 0.0,
+            "Normalized wxGA/90": (wxGA_away / a["MP"]) if a["MP"] > 0 else 0.0
+        })
+
+        # Calculate total standings
+        standings[team_name] = {
+            'points': h["Pts"] + a["Pts"],
+            'mp': h["MP"] + a["MP"],
+            'w': h["W"] + a["W"],
+            'd': h["D"] + a["D"],
+            'l': h["L"] + a["L"],
+            'gf': h["G"] + a["G"],
+            'ga': h["GA"] + a["GA"]
         }
 
+    home_df = pd.DataFrame(rows_home).sort_values("Squad").reset_index(drop=True)
+    away_df = pd.DataFrame(rows_away).sort_values("Squad").reset_index(drop=True)
+
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
-    print(f"✓ Successfully fetched data from fbref.com at {timestamp}")
+    print(f"✓ Successfully fetched data from understat.com at {timestamp}")
+    print(f"✓ Found {len(home_df)} teams")
 
     return home_df, away_df, standings, timestamp
 
@@ -429,7 +507,7 @@ def create_home_layout():
         html.H1("⚽ Premier League xPTS Tracker", className="text-center mb-2 mt-3"),
         html.H5("2025/26 Season Projections", className="text-center text-muted mb-3"),
         html.P(id='last-updated-display', children=f"Data: {last_updated}", className="text-center small text-warning mb-2"),
-        dbc.Button("🔄 Refresh Data from fbref.com", id="refresh-btn", color="success", className="mb-3", style={'display': 'block', 'margin': '0 auto'}),
+        dbc.Button("🔄 Refresh Data from understat.com", id="refresh-btn", color="success", className="mb-3", style={'display': 'block', 'margin': '0 auto'}),
         html.Div(id='refresh-status', className="text-center mb-3"),
 
         dbc.Row([
@@ -540,13 +618,13 @@ def refresh_data(n_clicks):
                 new_standings,
                 new_predictions.to_dict('records'),
                 new_projections.to_dict('records'),
-                dbc.Alert("✓ Successfully refreshed data from fbref.com!", color="success", duration=4000),
+                dbc.Alert("✓ Successfully refreshed data from understat.com!", color="success", duration=4000),
                 f"Last updated: {timestamp}"
             )
         except Exception as e:
             error_msg = str(e)
-            if '403' in error_msg:
-                msg = "⚠️ fbref.com blocked the request (403). Using existing data."
+            if '403' in error_msg or 'Forbidden' in error_msg:
+                msg = "⚠️ understat.com blocked the request. Using existing data."
             else:
                 msg = f"⚠️ Error: {error_msg}. Using existing data."
 
