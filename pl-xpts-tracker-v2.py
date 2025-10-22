@@ -332,9 +332,12 @@ def match_outcome_prob(home_df, away_df, home_team, away_team, league_avg_xG):
 # GENERATE PREDICTIONS
 # ==============================
 
-def generate_remaining_fixtures(home_df, away_df, league_avg_xG):
+def generate_remaining_fixtures(home_df, away_df, league_avg_xG, teams_list=None):
     """Generate predictions for remaining fixtures"""
-    teams = sorted(MOCK_CURRENT_STANDINGS.keys())
+    if teams_list is None:
+        teams = sorted(MOCK_CURRENT_STANDINGS.keys())
+    else:
+        teams = sorted(teams_list)
     predictions = []
 
     # Generate round-robin fixtures for remaining 18 matchdays
@@ -579,11 +582,9 @@ app.layout = dbc.Container([
     dcc.Store(id='standings-store', data=current_standings),
     dcc.Store(id='predictions-store', data=predictions_df.to_dict('records')),
     dcc.Store(id='projections-store', data=projections_df.to_dict('records')),
+    dcc.Store(id='teams-list-store', data=PREMIER_LEAGUE_TEAMS),
 
-    dcc.Tabs(id='main-tabs', value='home', children=[
-        dcc.Tab(label='🏠 Home', value='home'),
-        *[dcc.Tab(label=team, value=team) for team in PREMIER_LEAGUE_TEAMS]
-    ]),
+    html.Div(id='tabs-container'),
     html.Div(id='page-content')
 ], fluid=True, style={'padding': '0'})
 
@@ -592,11 +593,26 @@ app.layout = dbc.Container([
 # ==============================
 
 @app.callback(
+    Output('tabs-container', 'children'),
+    Input('teams-list-store', 'data')
+)
+def update_tabs(teams_list):
+    """Update tabs when team list changes"""
+    if not teams_list:
+        teams_list = PREMIER_LEAGUE_TEAMS
+
+    return dcc.Tabs(id='main-tabs', value='home', children=[
+        dcc.Tab(label='🏠 Home', value='home'),
+        *[dcc.Tab(label=team, value=team) for team in sorted(teams_list)]
+    ])
+
+@app.callback(
     [Output('home-data-store', 'data'),
      Output('away-data-store', 'data'),
      Output('standings-store', 'data'),
      Output('predictions-store', 'data'),
      Output('projections-store', 'data'),
+     Output('teams-list-store', 'data'),
      Output('refresh-status', 'children'),
      Output('last-updated-display', 'children')],
     [Input('refresh-btn', 'n_clicks')],
@@ -607,9 +623,10 @@ def refresh_data(n_clicks):
         try:
             new_home, new_away, new_standings, timestamp = fetch_fresh_data()
 
-            # Recalculate predictions
+            # Recalculate predictions using the team names from the fetched data
             new_league_avg = (new_home['Normalized wxG/90'].mean() + new_away['Normalized wxG/90'].mean()) / 2
-            new_predictions = generate_remaining_fixtures(new_home, new_away, new_league_avg)
+            teams_list = list(new_standings.keys())
+            new_predictions = generate_remaining_fixtures(new_home, new_away, new_league_avg, teams_list=teams_list)
             new_projections = calculate_projections(new_standings, new_predictions)
 
             return (
@@ -618,6 +635,7 @@ def refresh_data(n_clicks):
                 new_standings,
                 new_predictions.to_dict('records'),
                 new_projections.to_dict('records'),
+                teams_list,
                 dbc.Alert("✓ Successfully refreshed data from understat.com!", color="success", duration=4000),
                 f"Last updated: {timestamp}"
             )
@@ -628,7 +646,7 @@ def refresh_data(n_clicks):
             else:
                 msg = f"⚠️ Error: {error_msg}. Using existing data."
 
-            return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dbc.Alert(msg, color="warning", duration=6000), dash.no_update
+            return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dbc.Alert(msg, color="warning", duration=6000), dash.no_update
 
     raise dash.exceptions.PreventUpdate
 
